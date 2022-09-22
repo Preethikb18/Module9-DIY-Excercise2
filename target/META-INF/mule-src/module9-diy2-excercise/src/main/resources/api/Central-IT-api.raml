@@ -1,0 +1,81 @@
+#%RAML 1.0
+title: Central IT Group API
+types:
+  CustomerDataType: !include CustomerDataType.raml
+traits:
+  client-id-required:
+    headers:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+    responses:
+      401:
+        description: Unauthorized, The client_id or client_secret are not valid or the client does not have access.
+      429:
+        description: The client used all of its request quota for the current period.
+      500:
+        description: An error occurred, see the specific message (Only if it is a WSDL endpoint).
+      503:
+        description: Contracts Information Unreachable.
+/accounts:
+  is: [client-id-required]
+  description: Retrieves a list of all accounts based on the given   query parameters
+  
+  get:
+    headers:
+      user_id:
+        displayName: Requester ID
+        type: string
+        required: true
+        default: Preethi.K.B
+    queryParameters:
+      name:
+        required: false
+      accType: 
+        required: false
+        enum:
+          - personal
+          - business
+      
+    responses:
+          200:
+                body:
+                      application/json:
+                            type: CustomerDataType[]
+                            examples:
+                              output: !include Customerexample.raml
+          
+                                                                                                                      
+  post:
+    
+    body:
+      application/json:
+        type: CustomerDataType
+        examples:
+          input: !include examples/CustomerNoIdExample.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              Message: Accounts created
+  /{ID}:
+   is: [client-id-required]
+   get:
+    responses:
+      200:
+        body:
+          application/json:
+            type: CustomerDataType
+            examples:
+              output: !include examples/CustomerIDExample.raml
+            
+ 
+
+              
+
+     
+          
+
+    

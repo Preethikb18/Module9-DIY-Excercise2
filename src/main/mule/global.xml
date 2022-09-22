@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:central-it-group-api="http://www.mulesoft.org/schema/mule/central-it-group-api" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/central-it-group-api http://www.mulesoft.org/schema/mule/central-it-group-api/current/mule-central-it-group-api.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="f629551c-ee69-48a0-9284-7d1e6380a0e6" file="config.yaml" />
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="f56bdf4e-5b2d-40b6-a99d-d0d9e81a9e13" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<central-it-group-api:config name="Central_IT_Group_API_Config" doc:name="Central IT Group API Config" doc:id="4c9b6126-e138-40c1-a7fd-8a8cae51e5a6" property_host="${accounts.endpoints}" property_port="${accounts.port}" property_protocol="${accounts.protocol}" />
+</mule>

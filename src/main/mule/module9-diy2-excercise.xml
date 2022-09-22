@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:central-it-group-api="http://www.mulesoft.org/schema/mule/central-it-group-api"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/central-it-group-api http://www.mulesoft.org/schema/mule/central-it-group-api/current/mule-central-it-group-api.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<sub-flow name="SubFlow" doc:id="88fd96eb-d1c6-4fda-a06e-d72cf057bd70" >
+		<set-variable value="#[attributes.queryParams.name]" doc:name="acname" doc:id="7e267a48-9b52-4c64-bea4-c6efc10916b0" variableName="acname"/>
+		<set-variable value="#[attributes.queryParams.accType]" doc:name="actype" doc:id="d1ec5abb-1b5c-4291-8279-12f4a92d00e3" variableName="actype"/>
+		<set-variable value="#[attributes.queryParams.client_id]" doc:name="client_id" doc:id="5a0bf293-2d66-4d56-af81-dbd9326e329e" variableName="client_id"/>
+		<set-variable value="#[attributes.queryParams.client_secret]" doc:name="client_secret" doc:id="f4004da9-f22b-43b9-bd0a-6d74506650b2" variableName="client_secret"/>
+		<set-variable value="#[attributes.queryParams.user_id]" doc:name="user_id" doc:id="e516c6b0-2c8b-4c4c-854c-477a59085032" variableName="user_id"/>
+		<set-variable value="#[attributes.queryParams.op]" doc:name="operator" doc:id="82ce223f-4ea6-4e33-b708-cdd1828e72b0" variableName="operator"/>
+	</sub-flow>
+	<flow name="getAllAccounts" doc:id="d34e1b0a-6b18-45aa-b499-379d2d32606e" >
+		<http:listener doc:name="GET /AllAccounts" doc:id="2ad65852-fc21-4e85-b56e-d5d22357eed4" config-ref="HTTP_Listener_config" path="/allaccounts"/>
+		<flow-ref doc:name="SubFlow" doc:id="6d911b49-7c60-41ed-ac42-eb8aaa1b2e3c" name="SubFlow"/>
+		<validation:is-true doc:name="Is true" doc:id="6c3ea244-e7b8-429d-bb50-646d327fd8e2" expression="#[['OR','AND'] contains vars.operator]" message="#['Invalid operator' ++ ' ' ++ (vars.operator default 'AND')]"/>
+		<validation:is-true doc:name="Is true" doc:id="24324699-140f-4aa3-9920-69e55528bb77" expression="#[['personal','business'] contains vars.actype]" message="#['Invalid account type' ++ ' ' ++ (vars.actype default ' ')]"/>
+		<choice doc:name="Choice" doc:id="fe10e3d2-6377-46c3-b459-c3f5234e1897" >
+			<when expression="#[vars.operator =='OR']">
+				<flow-ref doc:name="getAccountsByType" doc:id="77c6c9c2-3368-4794-b22a-56c1e26d5d7d" name="getAccountsByType"/>
+			</when>
+			<when expression="#[vars.operator=='AND']">
+				<flow-ref doc:name="getAccountsByTypeName" doc:id="c720fd3f-1780-433f-95f8-a61504b2e912" name="getAccountsByTypeName"/>
+			</when>
+			<when expression="vars.operator =='OR'">
+				<flow-ref doc:name="getAccountsByName" doc:id="1854fa7a-f9d4-409e-9d83-5afb08c9381d" name="getAccountsByName"/>
+			</when>
+		</choice>
+	</flow>
+	<flow name="getAccountsByTypeName" doc:id="34f3fd87-5bf7-4d3d-b0ab-93b5744e8fc9" >
+		<flow-ref doc:name="SubFlow" doc:id="e3147341-a8be-4329-9f9d-b7b834d1d95e" name="SubFlow"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="7971529d-ac2c-4afd-a47e-ba5cab89a640" >
+			<route >
+				<flow-ref doc:name="getAccountsByName" doc:id="45741de2-596e-4db0-b907-c4193c2cf288" name="getAccountsByName"/>
+			</route>
+			<route >
+				<flow-ref doc:name="getAccountsByType" doc:id="3b3e3788-fbf2-424e-8014-8041cbe4d2b6" name="getAccountsByType"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="3b1c99db-2bcc-4042-8147-73886473ef3b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+flatten(payload..payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getAccountsByName" doc:id="7698c8f3-0e55-4dba-a2a0-642576a73176" >
+		<flow-ref doc:name="SubFlow" doc:id="7cd5422b-ba28-4b1b-865d-320ebfe40646" name="SubFlow"/>
+		<central-it-group-api:get-accounts doc:name="Get accounts" doc:id="e2ccd785-2fad-448f-bc6d-8eb0281359de" config-ref="Central_IT_Group_API_Config" client-id="${accounts.client_id}" client-secret="${accounts.client_secret}" sc-name="#[vars.acname]"/>
+		<ee:transform doc:name="Transform Message" doc:id="98771386-5ec0-4101-bc29-d1c642ca11d1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	ID: payload01.id as Number default 0,
+	firstName: payload01.firstName,
+	lastName: payload01.lastName,
+	address: payload01.address,
+	postal: payload01.postal,
+	country: payload01.country,
+	miles: payload01.miles,
+	creationDate: payload01.creationDate default "",
+	accType: payload01.accType
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getAccountsByType" doc:id="62bff527-b5a8-46f0-948d-badc3271092e" >
+		<http:listener doc:name="GET /getAccountsByType" doc:id="e030a6b1-c88a-4ab0-a437-fc3aaf4441ac" config-ref="HTTP_Listener_config" path="/accountsbytype" allowedMethods="GET"/>
+		<flow-ref doc:name="SubFlow" doc:id="e4249a46-2d20-4e2d-872e-8714e64f1844" name="SubFlow" />
+		<central-it-group-api:get-accounts doc:name="Get accounts" doc:id="bf6179a6-6dd7-4bbc-b626-59620f0dda4e" config-ref="Central_IT_Group_API_Config" client-id="${accounts.client_id}" client-secret="${accounts.client_secret}" acc-type="#[vars.actype]"/>
+		<ee:transform doc:name="JAVA to JSON" doc:id="6cc0c03a-fb93-401b-bdef-e94828ebe823" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	ID: payload01.id as Number default 0,
+	firstName: payload01.firstName,
+	lastName: payload01.lastName,
+	address: payload01.address,
+	postal: payload01.postal,
+	country: payload01.country,
+	miles: payload01.miles,
+	creationDate: payload01.creationDate default "",
+	accType: payload01.accType
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

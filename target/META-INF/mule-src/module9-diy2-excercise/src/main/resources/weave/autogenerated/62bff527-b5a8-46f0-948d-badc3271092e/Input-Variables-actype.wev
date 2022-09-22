@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_62bff527_b5a8_46f0_948d_badc3271092e_Input_Variables_actype = Any
+
